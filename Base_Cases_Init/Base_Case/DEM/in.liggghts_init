@@ -1,0 +1,150 @@
+######################################################
+# General Settings
+######################################################
+include	dataHeadDEM
+echo            both
+log             log.liggghts
+
+atom_style      sphere
+atom_modify     map array
+communicate     single vel yes
+newton          off
+units           si
+timestep	${timeStep}
+
+
+######################################################
+# Simulation domain and boundary
+######################################################
+boundary        f f f
+processors      * * *
+variable	reg_dim_xy equal 0.1 # SI = 0.1
+variable	reg_dim_z1 equal 0.01 # SI = 0.01
+variable	reg_dim_z2 equal 0.08 # SI = 0.08
+region          reg block -${reg_dim_xy} ${reg_dim_xy} -${reg_dim_xy} ${reg_dim_xy} -${reg_dim_z1} ${reg_dim_z2} units box
+create_box      2 reg
+
+######################################################
+# Neighbour detection
+######################################################
+neighbor        ${skin} bin
+neigh_modify 	delay 0 
+#neigh_modify    one 10000 check yes #binsize 0.01
+#every 1
+
+######################################################
+# Material properties required for new pair styles
+######################################################
+# type-1 --> Particle and type-2 --> Wall, Stirrer
+
+fix             m1 all property/global youngsModulus peratomtype ${yModulus1} ${yModulus2} #1e9 is the maximum
+fix             m2 all property/global poissonsRatio peratomtype ${pRatio1} ${pRatio2}
+fix             m3 all property/global coefficientRestitution peratomtypepair 2 ${CoR_pp11} ${CoR_pp12} ${CoR_pp12} ${CoR_pp22}
+fix             m4 all property/global coefficientFriction peratomtypepair 2 ${staticF_pp11} ${staticF_pp12} ${staticF_pp12} ${staticF_pp22}
+fix             m5 all property/global coefficientRollingFriction peratomtypepair 2 ${rollF_pp11} ${rollF_pp12} ${rollF_pp12} ${rollF_pp22}
+#fix		m6 all property/global fluidViscosityForLubri scalar 1.0016
+#fix		m7 all property/global cutoffDistanceH scalar ${cutoff_dist}
+
+######################################################
+# Force models between particle pairs
+######################################################
+pair_style      gran model hertz/be tangential history rolling_friction cdt contact_output off
+pair_coeff      * *
+
+# Gravity
+fix             gravi all gravity 9.81 vector 0.0 -1.0 0.0
+
+
+# create single partciles
+#create_atoms 1 single .05 .05 .054  units box
+#create_atoms 1 single .05 .05 .046 units box
+#variable dt equal 1e-6
+#timestep        ${dt}
+
+######################################################
+# Newton's second law - solver
+######################################################
+fix		integrator all nve/sphere	#default
+
+######################################################
+# Geometry and force models between particle-wall
+######################################################
+fix		GC all mesh/surface file ../CAD/Grinding_Chamber.stl type 2 scale 1		#load the .stl files as type-2 for geometry, scale down to transform the .stlfiles in mm to m
+fix		stirrer all mesh/surface file ../CAD/Stirrer.stl type 2 scale 1 curvature_tolerant yes
+
+fix		walls all wall/gran model hertz/be tangential history rolling_friction cdt mesh n_meshes 2 meshes GC stirrer contact_output off
+
+######################################################
+# Rotation settings
+######################################################
+fix		rotatestirrer all move/mesh mesh stirrer rotate origin 0. 0. 0. axis 0. 0. -1. period ${rotorPeriod} ################## Vary #######################
+
+
+######################################################
+# Particle insertion
+######################################################
+fix		ins_mesh1 all mesh/surface/planar file ../CAD/insertionFace.stl type 2 scale 1
+fix		ins_mesh2 all mesh/surface/planar file ../CAD/insertionFace.stl type 2 scale 1 rotate axis 0 0 1 angle 60
+fix		ins_mesh3 all mesh/surface/planar file ../CAD/insertionFace.stl type 2 scale 1 rotate axis 0 0 1 angle -60
+
+fix		zirconia all particletemplate/sphere 10487 atom_type 1 density constant ${density_zirc} radius constant ${radius_zirc} #volume_limit 1.41371669e-14 #A PSD should be specified here??
+
+fix		pdd1 all particledistribution/discrete 32452867 1 zirconia 1.0
+
+variable	particle_number_partition equal round(${particleNumber}/3)
+
+variable	particle_number3 equal ${particle_number_partition}
+
+variable	particle_number2 equal ${particle_number_partition}
+
+variable	particle_number1 equal ${particleNumber}-${particle_number2}-${particle_number3}
+
+
+variable	particle_rate equal ${particle_number_partition}/${insSteps} #SI = 0.03
+
+
+fix		ins1 all insert/stream seed 86028157 distributiontemplate pdd1 &
+		nparticles ${particle_number1} vel constant 0.0 ${insertion_speed_minus} 0.0 & 
+		particlerate ${particle_rate} overlapcheck yes insertion_face ins_mesh1 extrude_length ${extrusion_length}
+
+fix		ins2 all insert/stream seed 86028157 distributiontemplate pdd1 &
+		nparticles ${particle_number2} vel constant 0.0 ${insertion_speed_minus} 0.0 & 
+		particlerate ${particle_rate} overlapcheck yes insertion_face ins_mesh2 extrude_length ${extrusion_length}
+
+fix		ins3 all insert/stream seed 86028157 distributiontemplate pdd1 &
+		nparticles ${particle_number3} vel constant 0.0 ${insertion_speed_minus} 0.0 & 
+		particlerate ${particle_rate} overlapcheck yes insertion_face ins_mesh3 extrude_length ${extrusion_length}
+
+######################################################
+# Post-processing - computes and others
+######################################################
+thermo_style	custom step atoms ke
+thermo		1000
+thermo_modify	lost ignore norm no
+
+# output kinetic energy
+compute	KinEng all ke
+variable	t equal time
+variable	KIN equal c_KinEng
+fix		kinEnergy all print 100 "${t},${KIN}" append post/Kinetic_energy_init.txt screen no
+
+
+######################################################
+# Dump and run settings
+######################################################
+
+shell 		mkdir post_init
+
+dump		dmpstr all mesh/stl ${dumpFreq} post_init/Stirrer*.stl stirrer
+dump		dmppar all custom ${dumpFreq} post_init/dump*.particles id type x y z vx vy vz radius mass
+
+
+run 		${initSteps}
+
+
+write_restart   post/restart/liggghts.restart_1mm_80p
+
+
+
+
+
