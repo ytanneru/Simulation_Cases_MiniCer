@@ -4,4 +4,6 @@ Simulation cases described in the article, "Coupled CFD-DEM simulation of pin-ty
 **Pre-requisites:**
 LIGGGHTS, OpenFOAM-6, cfdemCoupling, and their corresponding dependencies, Python (>3.6)
 
+The versions of simulation softwares used in the simulation cases are taken from Institute for Particle Technology's (iPAT) GitLab repository: https://git.rz.tu-bs.de/partikeltechnik/
+
 
