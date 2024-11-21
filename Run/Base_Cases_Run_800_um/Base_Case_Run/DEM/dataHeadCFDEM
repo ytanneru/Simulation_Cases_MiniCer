@@ -1,0 +1,61 @@
+variable pi		equal PI
+
+variable yModulus1	equal 1e9
+variable yModulus2	equal 1e9
+
+variable pRatio1	equal 0.31
+variable pRatio2	equal 0.31
+
+variable CoR_pp11	equal 0.92 # read from file
+variable CoR_pp12	equal 0.92 # read from file
+variable CoR_pp22	equal 0.92 # read from file
+
+variable staticF_pp11	equal 0.15 # read from file
+variable staticF_pp12	equal 0.15 # read from file
+variable staticF_pp22	equal 0.15 # read from file
+
+variable rollF_pp11	equal 0.01 # read from file
+variable rollF_pp12	equal 0.01 # read from file
+variable rollF_pp22	equal 0.01 # read from file
+
+## Particle Properties
+
+variable density_zirc	equal 6050
+
+variable dia_zirc_um	equal 1100 # SI = 1.1e-3  # To Be Modified
+variable diameter_zirc equal ${dia_zirc_um}*1e-6
+variable radius_zirc	equal ${diameter_zirc}/2.0
+
+## Lubrication props
+variable viscosity	equal 0.0010016 # To Be Modified
+variable cutoff_dist	equal 0.05*${diameter_zirc} # 10% of particle radius # To Be Modified
+
+variable skin		equal 1.2*${diameter_zirc}
+
+
+variable timeStep	equal 1e-6 # Rayleigh time-step calculation
+
+## Particle calculation
+variable fillingDegree	equal 0.8 # To Be Modified
+variable activeVolume	equal 200e3 # 200ml (in mm3)
+variable voidFraction	equal 0.41
+variable packingDensity	equal 1.0-${voidFraction}
+
+variable sixBypi	equal 6/${pi}
+variable volumeOccupied	equal ${activeVolume}*${packingDensity}*${fillingDegree} # mm3
+variable dia_zirc_mm	equal ${diameter_zirc}*1e3
+
+variable particleNum	equal ${volumeOccupied}*${sixBypi}
+variable particleNumb	equal ${particleNum}/(${dia_zirc_mm}^3)
+variable particleNumber	equal round(${particleNumb})
+
+## Rotor speeds
+variable rotorSpeed	equal 2500 # RPM # To Be Modified
+variable rotorPeriod	equal 60/${rotorSpeed} # Period
+
+## Dump frequency calculation
+variable number_of_rot	equal 1 # To Be Modified
+variable stableTime	equal ${number_of_rot}*${rotorPeriod}
+variable stableSteps	equal ${stableTime}/${timeStep}
+variable dumpFreq	equal round(${stableSteps}/20) ## 20 files overall
+
