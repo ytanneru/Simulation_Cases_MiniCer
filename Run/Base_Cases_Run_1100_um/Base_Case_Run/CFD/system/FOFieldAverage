@@ -1,0 +1,31 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Version:  6
+     \\/     M anipulation  |
+-------------------------------------------------------------------------------
+Description
+    Calculates the Field Average.
+
+\*---------------------------------------------------------------------------*/
+fieldAverage1
+{
+	type            fieldAverage;
+	libs            ("libfieldFunctionObjects.so");
+
+	//field           phi;
+
+	writeControl    writeTime;
+	fields
+	(
+		U
+		{
+			mean		on;
+			prime2Mean	on;
+			base		iteration;
+		}
+	);
+}
+// ************************************************************************* //
+
