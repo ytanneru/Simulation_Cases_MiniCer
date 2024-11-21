@@ -1,0 +1,63 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Version:  6
+     \\/     M anipulation  |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    object      controlDict;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+#include "../constant/dataHeadCFD"
+
+application     cfdemSolverPisoIBg;
+
+startFrom	startTime; //0.0002
+
+startTime       $startTimee;
+
+stopAt          endTime;
+
+endTime         $endTimee;//0.05;
+
+deltaT          1e-06;//1e-06
+
+writeControl    adjustableRunTime; //timestep;
+
+writeInterval   $writeIntervall;//0.01;//0.0025; //10;
+
+purgeWrite      0;
+
+writeFormat     ascii;
+
+writePrecision  6;
+
+writeCompression off; 
+
+timeFormat      general;
+
+timePrecision   6;
+
+runTimeModifiable true; 
+
+//adjustTimeStep  no; //adjusted
+
+maxCo           0.9; //adjusted
+maxAlphaCo      0.5;
+
+//maxDeltaT       1; //adjusted
+
+//*************************************************************************//
+functions
+{
+	include "FOCourantNo"
+	include "FOFieldAverage"
+	include "FOFieldMinMax"
+}
+

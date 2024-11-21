@@ -1,0 +1,205 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  2.2.1                                 |
+|   \\  /    A nd           | Web:      www.OpenFOAM.org                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    object      blockMeshDict;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+#include "../constant/dataHeadCFD"
+
+//convertToMeters 1.;
+scale 1.0;
+
+// Cylinder parameters
+diameter 0.077;
+
+radius #calc "0.5*$diameter";
+radiusm #calc "-0.5*$diameter";
+
+length_start 0.0096;
+length_end 0.0674;
+
+invssqrt2 0.7071067812; //#calc "cos(45.0)";
+
+r #calc "$radius*$invssqrt2"; //positive radius of arc
+rm #calc "$radiusm*$invssqrt2"; //negative radius of arc
+
+// Inner cube/cuboid parameters
+factor 0.45;//0.7;//0.5;
+
+ix #calc "$factor*$r";
+ixm #calc "$factor*$rm";
+iy #calc "$factor*$r";
+iym #calc "$factor*$rm";
+
+
+nr 11;//13; //15; //20; 
+nz 22;//24; //30; 
+nc 10;//5; //6; //8;
+
+// Cone parameters
+
+diameter2 0.054;
+
+radius2 #calc "0.5*$diameter2";
+radiusm2 #calc "-0.5*$diameter2";
+
+r2 #calc "$radius2*$invssqrt2"; //positive radius of arc
+rm2 #calc "$radiusm2*$invssqrt2"; //negative radius of arc
+
+ix2 #calc "$factor*$r2";
+ixm2 #calc "$factor*$rm2";
+iy2 #calc "$factor*$r2";
+iym2 #calc "$factor*$rm2";
+
+nr2 $nr; 
+nz2 4; //5;
+nc2 $nc;
+
+vertices
+(
+    ($rm $rm $length_start) //0
+    ($ixm $iym $length_start) //1
+
+    ($ixm $iy $length_start) //2
+    ($rm $r $length_start) //3
+
+    ($ix $iy $length_start) //4
+    ($r $r $length_start) //5
+
+    ($ix $iym $length_start) //6
+    ($r $rm $length_start) //7
+
+    ($rm $rm $length_end) //8
+    ($ixm $iym $length_end) //9
+
+    ($ixm $iy $length_end) //10
+    ($rm $r $length_end) //11
+
+    ($ix $iy $length_end) //12
+    ($r $r $length_end) //13
+
+    ($ix $iym $length_end) //14
+    ($r $rm $length_end) //15
+    
+    // Cone
+    ($rm2 $rm2 0) //16
+    ($ixm2 $iym2 0) //17
+
+    ($ixm2 $iy2 0) //18
+    ($rm2 $r2 0) //19
+
+    ($ix2 $iy2 0) //20
+    ($r2 $r2 0) //21
+    
+    ($ix2 $iym2 0) //22
+    ($r2 $rm2 0) //23
+
+    /*($rm $rm $length_start) //24
+    ($ixm $iym $length_start) //25
+
+    ($ixm $iy $length_start) //26
+    ($rm $r $length_start) //27
+
+    ($ix $iy $length_start) //28
+    ($r $r $length_start) //29
+
+    ($ix $iym $length_start) //30
+    ($r $rm $length_start) //31*/
+);
+
+blocks
+(
+    hex (0 1 2 3 8 9 10 11) ($nc $nr $nz) simpleGrading (1 1 1)
+    hex (3 2 4 5 11 10 12 13) ($nc $nr $nz) simpleGrading (1 1 1)
+    hex (5 4 6 7 13 12 14 15) ($nc $nr $nz) simpleGrading (1 1 1)
+    hex (7 6 1 0 15 14 9 8) ($nc $nr $nz) simpleGrading (1 1 1)
+
+    
+    //Inner square
+    hex (1 6 4 2 9 14 12 10) ($nr $nr $nz) simpleGrading (1 1 1)
+    
+    // Cone
+    hex (16 17 18 19 0 1 2 3) ($nc2 $nr2 $nz2) simpleGrading (1 1 1)
+    hex (19 18 20 21 3 2 4 5) ($nc2 $nr2 $nz2) simpleGrading (1 1 1)
+    hex (21 20 22 23 5 4 6 7) ($nc2 $nr2 $nz2) simpleGrading (1 1 1)
+    hex (23 22 17 16 7 6 1 0) ($nc2 $nr2 $nz2) simpleGrading (1 1 1)
+
+    
+    //Inner square Cone
+    hex (17 22 20 18 1 6 4 2) ($nr2 $nr2 $nz2) simpleGrading (1 1 1)
+);
+
+edges
+(
+    arc 0 3 ($radiusm 0  $length_start)
+    arc 3 5 (0 $radius  $length_start)
+    arc 5 7 ($radius 0  $length_start)
+    arc 7 0 (0 $radiusm $length_start)
+
+    arc 8 11 ($radiusm 0 $length_end)
+    arc 11 13 (0  $radius $length_end)
+    arc 13 15 ($radius 0 $length_end)
+    arc 15 8 (0 $radiusm $length_end)
+    
+    // Cone end
+    arc 16 19 ($radiusm2 0  0)
+    arc 19 21 (0 $radius2  0)
+    arc 21 23 ($radius2 0  0)
+    arc 23 16 (0 $radiusm2 0)
+
+);
+
+boundary
+(
+    walls
+    {
+    	type wall;
+    	faces
+    	(
+    		(0 3 11 8)
+	        (3 5 13 11)
+	        (5 7 15 13)
+	        (7 0 8 15)
+	        (8 9 10 11)
+	        (11 10 12 13)
+	        (13 12 14 15)
+	        (15 14 9 8)
+	        (9 14 12 10)
+	        
+	        //cone
+	        (0 3 19 16)
+	        (3 5 21 19)
+	        (5 7 23 21)
+	        (7 0 16 23)
+    	);
+    }
+    
+    freeSurface
+    {
+        type wall;//slip; // slip produces weird inGroup entry?
+        faces
+        (
+	        (16 17 18 19)
+	        (19 18 20 21)
+	        (21 20 22 23)
+	        (23 16 17 22)
+	        (17 22 20 18)
+        );
+    }
+);
+
+mergePatchPairs
+(
+);
+
+// ************************************************************************* //
